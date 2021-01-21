@@ -112,7 +112,7 @@ impl Application for Stopwatch {
             total / 5.0
         };
 
-        let mut get_usage = | mut i: usize | -> f32 {
+        let mut get_usage = | | -> f32 {
             system.refresh_all();
 
             let mut total: f32 = 0.0;
