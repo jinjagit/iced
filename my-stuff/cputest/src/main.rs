@@ -4,6 +4,7 @@ use iced::{
     Subscription, Text,
 };
 use std::time::{Duration, Instant};
+use sysinfo::{ProcessorExt, SystemExt};
 
 pub fn main() -> iced::Result {
     Stopwatch::run(Settings::default())
@@ -24,8 +25,8 @@ enum State {
 #[derive(Debug, Clone)]
 enum Message {
     Toggle,
-    Reset,
-    Tick(Instant),
+    Reset, // Remove. We don't need reset.
+    Tick(Instant), // Replace 'Instant' with value of usage (returned by a function)
 }
 
 impl Application for Stopwatch {
@@ -36,17 +37,17 @@ impl Application for Stopwatch {
     fn new(_flags: ()) -> (Stopwatch, Command<Message>) {
         (
             Stopwatch {
-                duration: Duration::default(),
+                duration: Duration::default(), // Replace with output var (e.g. usage), with default of "---" string placeholder
                 state: State::Idle,
                 toggle: button::State::new(),
-                reset: button::State::new(),
+                reset: button::State::new(), // Remove.
             },
             Command::none(),
         )
     }
 
     fn title(&self) -> String {
-        String::from("Stopwatch - Iced")
+        String::from("CPU usage test")
     }
 
     fn update(&mut self, message: Message) -> Command<Message> {
@@ -54,7 +55,7 @@ impl Application for Stopwatch {
             Message::Toggle => match self.state {
                 State::Idle => {
                     self.state = State::Ticking {
-                        last_tick: Instant::now(),
+                        last_tick: Instant::now(), // Remove: we are not calculating elapsed time
                     };
                 }
                 State::Ticking { .. } => {
@@ -63,11 +64,13 @@ impl Application for Stopwatch {
             },
             Message::Tick(now) => match &mut self.state {
                 State::Ticking { last_tick } => {
+                    //println!("{:?}", now);
                     self.duration += now - *last_tick;
                     *last_tick = now;
                 }
                 _ => {}
             },
+            // Remove, we don't need reset.
             Message::Reset => {
                 self.duration = Duration::default();
             }
@@ -77,27 +80,66 @@ impl Application for Stopwatch {
     }
 
     fn subscription(&self) -> Subscription<Message> {
+        const TICK: u64 = 500; // Tick time step, in miliseconds.
         match self.state {
             State::Idle => Subscription::none(),
             State::Ticking { .. } => {
-                time::every(Duration::from_millis(10)).map(Message::Tick)
+                time::every(Duration::from_millis(TICK)).map(Message::Tick)
             }
         }
     }
 
     fn view(&mut self) -> Element<Message> {
-        const MINUTE: u64 = 60;
-        const HOUR: u64 = 60 * MINUTE;
+        let mut system = sysinfo::System::new_all();
+        let mut num_cores: u8 = 0;
+        let mut aves: Vec<f32> = vec![0.0, 0.0, 0.0, 0.0, 0.0];
+        let mut i: usize = 0;
 
-        let seconds = self.duration.as_secs();
+        // Count virtual cores.
+        for _processor in system.get_processors() {
+            num_cores += 1;
+        }
 
-        let duration = Text::new(format!(
-            "{:0>2}:{:0>2}:{:0>2}.{:0>2}",
-            seconds / HOUR,
-            (seconds % HOUR) / MINUTE,
-            seconds % MINUTE,
-            self.duration.subsec_millis() / 10,
-        ))
+        // println!("cores: {}", num_cores);
+
+        let mov_ave = |aves: Vec<f32>| -> f32 {
+            let mut total: f32 = 0.0;
+
+            for j in 0..aves.iter().count() {
+                total += aves[j];
+            }
+
+            total / 5.0
+        };
+
+        let mut get_usage = | mut i: usize | -> f32 {
+            system.refresh_all();
+
+            let mut total: f32 = 0.0;
+
+            for processor in system.get_processors() {
+                total += processor.get_cpu_usage();
+                println!("procs: {}", total);
+            }
+
+            aves[i] = total / num_cores as f32;
+
+            println!("aves: {:?}", aves);
+            println!("total: {}", total);
+            println!("cores: {}", num_cores);
+            println!("aves[i]: {}", aves[i]);
+
+            let ave = mov_ave(aves.clone());
+
+            i += 1;
+            if i == 5 {
+                i = 0;
+            }
+
+            ave
+        };
+
+        let duration = Text::new(format!("{:.2}", get_usage()))
         .size(40);
 
         let button = |state, label, style| {
@@ -120,6 +162,7 @@ impl Application for Stopwatch {
             button(&mut self.toggle, label, color).on_press(Message::Toggle)
         };
 
+        // Remove: we don't need a reset button
         let reset_button =
             button(&mut self.reset, "Reset", style::Button::Secondary)
                 .on_press(Message::Reset);
@@ -149,7 +192,7 @@ mod style {
 
     pub enum Button {
         Primary,
-        Secondary,
+        Secondary, // Remove. This is the unwanted 'reset' button.
         Destructive,
     }
 

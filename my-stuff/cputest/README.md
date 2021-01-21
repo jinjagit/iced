@@ -1,3 +1,5 @@
+## Use Stopwatch as basis to develop simple cpu usage monitor.
+
 ## Stopwatch
 
 A watch with start/stop and reset buttons showcasing how to listen to time.
