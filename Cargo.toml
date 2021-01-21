@@ -83,6 +83,7 @@ members = [
     "examples/svg",
     "examples/todos",
     "examples/tour",
+    "my-stuff/cputest",
 ]
 
 [dependencies]

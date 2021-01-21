@@ -1,0 +1,9 @@
+[package]
+name = "cputest"
+version = "0.1.0"
+authors = ["Simon Tharby <simontharby@gmail.com>"]
+edition = "2018"
+publish = false
+
+[dependencies]
+iced = { path = "../..", features = ["smol"] }
