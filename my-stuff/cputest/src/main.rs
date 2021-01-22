@@ -4,14 +4,16 @@ use iced::{
     Subscription, Text,
 };
 use std::time::{Duration, Instant};
-use sysinfo::{ProcessorExt, SystemExt};
+use sysinfo::{ProcessorExt, System, SystemExt};
 
 pub fn main() -> iced::Result {
     Stopwatch::run(Settings::default())
 }
 
 struct Stopwatch {
-    duration: Duration,
+    counter: u32,
+    sysinfo: System,
+    duration: Text,
     state: State,
     toggle: button::State,
     reset: button::State,
@@ -37,7 +39,10 @@ impl Application for Stopwatch {
     fn new(_flags: ()) -> (Stopwatch, Command<Message>) {
         (
             Stopwatch {
-                duration: Duration::default(), // Replace with output var (e.g. usage), with default of "---" string placeholder
+                counter: 0,
+                sysinfo: sysinfo::System::new_all(),
+                duration: Text::new(format!("---"))
+                .size(40), // Replace with output var (e.g. usage), with default of "---" string placeholder
                 state: State::Idle,
                 toggle: button::State::new(),
                 reset: button::State::new(), // Remove.
@@ -65,14 +70,15 @@ impl Application for Stopwatch {
             Message::Tick(now) => match &mut self.state {
                 State::Ticking { last_tick } => {
                     //println!("{:?}", now);
-                    self.duration += now - *last_tick;
-                    *last_tick = now;
+                    self.counter += 1;
+                    self.duration = Text::new(format!("{}", self.counter))
+                    .size(40);
                 }
                 _ => {}
             },
             // Remove, we don't need reset.
             Message::Reset => {
-                self.duration = Duration::default();
+                //self.duration = Duration::default();
             }
         }
 
@@ -139,7 +145,7 @@ impl Application for Stopwatch {
             ave
         };
 
-        let duration = Text::new(format!("{:.2}", get_usage()))
+        let duration = Text::new(format!("{}", self.counter))
         .size(40);
 
         let button = |state, label, style| {
