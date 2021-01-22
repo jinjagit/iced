@@ -11,9 +11,11 @@ pub fn main() -> iced::Result {
 }
 
 struct Stopwatch {
-    counter: f32,
     sysinfo: System,
-    cpu_usage: Text,
+    cpu_usage: f32,
+    aves: Vec<f32>,
+    aves_index: usize,
+    cpu_usage_text: Text,
     duration: Duration,
     state: State,
     toggle: button::State,
@@ -40,9 +42,11 @@ impl Application for Stopwatch {
     fn new(_flags: ()) -> (Stopwatch, Command<Message>) {
         (
             Stopwatch {
-                counter: 0.0,
                 sysinfo: sysinfo::System::new_all(),
-                cpu_usage: Text::new(format!("---"))
+                cpu_usage: 0.0,
+                aves: vec![0.0, 0.0, 0.0, 0.0, 0.0],
+                aves_index: 0,
+                cpu_usage_text: Text::new(format!("---"))
                 .size(40), // Replace with output var (e.g. usage), with default of "---" string placeholder
                 duration: Duration::default(),
                 state: State::Idle,
@@ -73,7 +77,6 @@ impl Application for Stopwatch {
                 State::Ticking { last_tick } => {
                     self.duration += now - *last_tick;
                     *last_tick = now;
-                    //self.counter += 1;
 
                     self.sysinfo.refresh_all();
 
@@ -81,12 +84,24 @@ impl Application for Stopwatch {
 
                     for processor in self.sysinfo.get_processors() {
                         total += processor.get_cpu_usage();
-                        //println!("procs: {}", total);
                     }
 
-                    self.counter = total / 8.0 as f32;
+                    self.aves[self.aves_index] = total / 8.0 as f32;
 
-                    self.cpu_usage = Text::new(format!("{}", self.counter))
+                    total = 0.0;
+
+                    for j in 0..self.aves.iter().count() {
+                        total += self.aves[j];
+                    }
+
+                    self.cpu_usage = total / 5.0;
+
+                    self.aves_index += 1;
+                    if self.aves_index == 5 {
+                        self.aves_index = 0;
+                    }
+
+                    self.cpu_usage_text = Text::new(format!("{}", self.cpu_usage))
                     .size(40);
                 }
                 _ => {}
@@ -160,7 +175,7 @@ impl Application for Stopwatch {
             ave
         };
 
-        let cpu_usage = Text::new(format!("{}", self.counter))
+        let cpu_usage_text = Text::new(format!("{}", self.cpu_usage))
         .size(40);
 
         let button = |state, label, style| {
@@ -196,7 +211,7 @@ impl Application for Stopwatch {
         let content = Column::new()
             .align_items(Align::Center)
             .spacing(20)
-            .push(cpu_usage)
+            .push(cpu_usage_text)
             .push(controls);
 
         Container::new(content)
