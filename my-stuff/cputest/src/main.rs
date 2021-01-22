@@ -11,9 +11,10 @@ pub fn main() -> iced::Result {
 }
 
 struct Stopwatch {
-    counter: u32,
+    counter: f32,
     sysinfo: System,
-    duration: Text,
+    cpu_usage: Text,
+    duration: Duration,
     state: State,
     toggle: button::State,
     reset: button::State,
@@ -39,10 +40,11 @@ impl Application for Stopwatch {
     fn new(_flags: ()) -> (Stopwatch, Command<Message>) {
         (
             Stopwatch {
-                counter: 0,
+                counter: 0.0,
                 sysinfo: sysinfo::System::new_all(),
-                duration: Text::new(format!("---"))
+                cpu_usage: Text::new(format!("---"))
                 .size(40), // Replace with output var (e.g. usage), with default of "---" string placeholder
+                duration: Duration::default(),
                 state: State::Idle,
                 toggle: button::State::new(),
                 reset: button::State::new(), // Remove.
@@ -69,9 +71,22 @@ impl Application for Stopwatch {
             },
             Message::Tick(now) => match &mut self.state {
                 State::Ticking { last_tick } => {
-                    //println!("{:?}", now);
-                    self.counter += 1;
-                    self.duration = Text::new(format!("{}", self.counter))
+                    self.duration += now - *last_tick;
+                    *last_tick = now;
+                    //self.counter += 1;
+
+                    self.sysinfo.refresh_all();
+
+                    let mut total: f32 = 0.0;
+
+                    for processor in self.sysinfo.get_processors() {
+                        total += processor.get_cpu_usage();
+                        //println!("procs: {}", total);
+                    }
+
+                    self.counter = total / 8.0 as f32;
+
+                    self.cpu_usage = Text::new(format!("{}", self.counter))
                     .size(40);
                 }
                 _ => {}
@@ -145,7 +160,7 @@ impl Application for Stopwatch {
             ave
         };
 
-        let duration = Text::new(format!("{}", self.counter))
+        let cpu_usage = Text::new(format!("{}", self.counter))
         .size(40);
 
         let button = |state, label, style| {
@@ -181,7 +196,7 @@ impl Application for Stopwatch {
         let content = Column::new()
             .align_items(Align::Center)
             .spacing(20)
-            .push(duration)
+            .push(cpu_usage)
             .push(controls);
 
         Container::new(content)
