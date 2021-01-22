@@ -19,7 +19,6 @@ struct Stopwatch {
     duration: Duration,
     state: State,
     toggle: button::State,
-    reset: button::State,
 }
 
 enum State {
@@ -30,7 +29,6 @@ enum State {
 #[derive(Debug, Clone)]
 enum Message {
     Toggle,
-    Reset, // Remove. We don't need reset.
     Tick(Instant), // Replace 'Instant' with value of usage (returned by a function)
 }
 
@@ -51,7 +49,6 @@ impl Application for Stopwatch {
                 duration: Duration::default(),
                 state: State::Idle,
                 toggle: button::State::new(),
-                reset: button::State::new(), // Remove.
             },
             Command::none(),
         )
@@ -105,10 +102,6 @@ impl Application for Stopwatch {
                     .size(40);
                 }
                 _ => {}
-            },
-            // Remove, we don't need reset.
-            Message::Reset => {
-                //self.duration = Duration::default();
             }
         }
 
@@ -126,55 +119,6 @@ impl Application for Stopwatch {
     }
 
     fn view(&mut self) -> Element<Message> {
-        let mut system = sysinfo::System::new_all();
-        let mut num_cores: u8 = 0;
-        let mut aves: Vec<f32> = vec![0.0, 0.0, 0.0, 0.0, 0.0];
-        let mut i: usize = 0;
-
-        // Count virtual cores.
-        for _processor in system.get_processors() {
-            num_cores += 1;
-        }
-
-        // println!("cores: {}", num_cores);
-
-        let mov_ave = |aves: Vec<f32>| -> f32 {
-            let mut total: f32 = 0.0;
-
-            for j in 0..aves.iter().count() {
-                total += aves[j];
-            }
-
-            total / 5.0
-        };
-
-        let mut get_usage = | | -> f32 {
-            system.refresh_all();
-
-            let mut total: f32 = 0.0;
-
-            for processor in system.get_processors() {
-                total += processor.get_cpu_usage();
-                println!("procs: {}", total);
-            }
-
-            aves[i] = total / num_cores as f32;
-
-            println!("aves: {:?}", aves);
-            println!("total: {}", total);
-            println!("cores: {}", num_cores);
-            println!("aves[i]: {}", aves[i]);
-
-            let ave = mov_ave(aves.clone());
-
-            i += 1;
-            if i == 5 {
-                i = 0;
-            }
-
-            ave
-        };
-
         let cpu_usage_text = Text::new(format!("{}", self.cpu_usage))
         .size(40);
 
@@ -198,15 +142,9 @@ impl Application for Stopwatch {
             button(&mut self.toggle, label, color).on_press(Message::Toggle)
         };
 
-        // Remove: we don't need a reset button
-        let reset_button =
-            button(&mut self.reset, "Reset", style::Button::Secondary)
-                .on_press(Message::Reset);
-
         let controls = Row::new()
             .spacing(20)
-            .push(toggle_button)
-            .push(reset_button);
+            .push(toggle_button);
 
         let content = Column::new()
             .align_items(Align::Center)
@@ -228,7 +166,6 @@ mod style {
 
     pub enum Button {
         Primary,
-        Secondary, // Remove. This is the unwanted 'reset' button.
         Destructive,
     }
 
@@ -237,7 +174,6 @@ mod style {
             button::Style {
                 background: Some(Background::Color(match self {
                     Button::Primary => Color::from_rgb(0.11, 0.42, 0.87),
-                    Button::Secondary => Color::from_rgb(0.5, 0.5, 0.5),
                     Button::Destructive => Color::from_rgb(0.8, 0.2, 0.2),
                 })),
                 border_radius: 12.0,
