@@ -7,10 +7,10 @@ use std::time::{Duration, Instant};
 use sysinfo::{ProcessorExt, System, SystemExt};
 
 pub fn main() -> iced::Result {
-    Stopwatch::run(Settings::default())
+    SystemMonitor::run(Settings::default())
 }
 
-struct Stopwatch {
+struct SystemMonitor {
     sysinfo: System,
     cpu_usage: f32,
     aves: Vec<f32>,
@@ -29,23 +29,22 @@ enum State {
 #[derive(Debug, Clone)]
 enum Message {
     Toggle,
-    Tick(Instant), // Replace 'Instant' with value of usage (returned by a function)
+    Tick(Instant),
 }
 
-impl Application for Stopwatch {
+impl Application for SystemMonitor {
     type Executor = executor::Default;
     type Message = Message;
     type Flags = ();
 
-    fn new(_flags: ()) -> (Stopwatch, Command<Message>) {
+    fn new(_flags: ()) -> (SystemMonitor, Command<Message>) {
         (
-            Stopwatch {
+            SystemMonitor {
                 sysinfo: sysinfo::System::new_all(),
                 cpu_usage: 0.0,
                 aves: vec![0.0, 0.0, 0.0, 0.0, 0.0],
                 aves_index: 0,
-                cpu_usage_text: Text::new(format!("---"))
-                .size(40), // Replace with output var (e.g. usage), with default of "---" string placeholder
+                cpu_usage_text: Text::new(format!("---")).size(40),
                 duration: Duration::default(),
                 state: State::Idle,
                 toggle: button::State::new(),
@@ -63,7 +62,7 @@ impl Application for Stopwatch {
             Message::Toggle => match self.state {
                 State::Idle => {
                     self.state = State::Ticking {
-                        last_tick: Instant::now(), // Remove: we are not calculating elapsed time
+                        last_tick: Instant::now(),
                     };
                 }
                 State::Ticking { .. } => {
@@ -98,11 +97,11 @@ impl Application for Stopwatch {
                         self.aves_index = 0;
                     }
 
-                    self.cpu_usage_text = Text::new(format!("{:.2}", self.cpu_usage))
-                    .size(40);
+                    self.cpu_usage_text =
+                        Text::new(format!("{:.2}", self.cpu_usage)).size(40);
                 }
                 _ => {}
-            }
+            },
         }
 
         Command::none()
@@ -119,8 +118,10 @@ impl Application for Stopwatch {
     }
 
     fn view(&mut self) -> Element<Message> {
-        let cpu_usage_text = Text::new(format!("{:.2}", self.cpu_usage))
-        .size(40);
+        let info_text = Text::new(format!("CPU % usage")).size(24);
+
+        let cpu_usage_text =
+            Text::new(format!("{:.2}", self.cpu_usage)).size(40);
 
         let button = |state, label, style| {
             Button::new(
@@ -142,13 +143,12 @@ impl Application for Stopwatch {
             button(&mut self.toggle, label, color).on_press(Message::Toggle)
         };
 
-        let controls = Row::new()
-            .spacing(20)
-            .push(toggle_button);
+        let controls = Row::new().spacing(20).push(toggle_button);
 
         let content = Column::new()
             .align_items(Align::Center)
             .spacing(20)
+            .push(info_text)
             .push(cpu_usage_text)
             .push(controls);
 
@@ -163,7 +163,7 @@ impl Application for Stopwatch {
 }
 
 mod style {
-    use iced::{button, Background, Color, container, Vector};
+    use iced::{button, container, Background, Color, Vector};
 
     pub enum Button {
         Primary,
