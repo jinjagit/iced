@@ -98,7 +98,7 @@ impl Application for Stopwatch {
                         self.aves_index = 0;
                     }
 
-                    self.cpu_usage_text = Text::new(format!("{}", self.cpu_usage))
+                    self.cpu_usage_text = Text::new(format!("{:.2}", self.cpu_usage))
                     .size(40);
                 }
                 _ => {}
@@ -119,7 +119,7 @@ impl Application for Stopwatch {
     }
 
     fn view(&mut self) -> Element<Message> {
-        let cpu_usage_text = Text::new(format!("{}", self.cpu_usage))
+        let cpu_usage_text = Text::new(format!("{:.2}", self.cpu_usage))
         .size(40);
 
         let button = |state, label, style| {
@@ -157,12 +157,13 @@ impl Application for Stopwatch {
             .height(Length::Fill)
             .center_x()
             .center_y()
+            .style(style::Container)
             .into()
     }
 }
 
 mod style {
-    use iced::{button, Background, Color, Vector};
+    use iced::{button, Background, Color, container, Vector};
 
     pub enum Button {
         Primary,
@@ -180,6 +181,20 @@ mod style {
                 shadow_offset: Vector::new(1.0, 1.0),
                 text_color: Color::WHITE,
                 ..button::Style::default()
+            }
+        }
+    }
+
+    pub struct Container;
+
+    impl container::StyleSheet for Container {
+        fn style(&self) -> container::Style {
+            container::Style {
+                background: Some(Background::Color(Color::from_rgb8(
+                    0x36, 0x39, 0x3F,
+                ))),
+                text_color: Some(Color::WHITE),
+                ..container::Style::default()
             }
         }
     }
