@@ -17,13 +17,14 @@ struct SystemMonitor {
     aves: Vec<f32>,
     aves_index: usize,
     cpu_usage_text: Text,
-    duration: Duration,
     state: State,
     toggle: button::State,
 }
 
+#[allow(dead_code)]
 enum State {
     Idle,
+    // last_tick => 'Dead code', but seems needed by Subscription using iced::time.
     Ticking { last_tick: Instant },
 }
 
@@ -57,7 +58,6 @@ impl Application for SystemMonitor {
                 aves: vec![0.0, 0.0, 0.0, 0.0, 0.0],
                 aves_index: 0,
                 cpu_usage_text: Text::new(format!("---")).size(40),
-                duration: Duration::default(),
                 state: State::Idle,
                 toggle: button::State::new(),
             },
@@ -81,11 +81,8 @@ impl Application for SystemMonitor {
                     self.state = State::Idle;
                 }
             },
-            Message::Tick(now) => match &mut self.state {
-                State::Ticking { last_tick } => {
-                    self.duration += now - *last_tick;
-                    *last_tick = now;
-
+            Message::Tick(_now) => match &mut self.state {
+                State::Ticking { .. } => {
                     self.sysinfo.refresh_all();
 
                     let mut total: f32 = 0.0;
