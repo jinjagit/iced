@@ -10,4 +10,4 @@ I have 2 main questions, after getting this far:
 2. How can I pull all the necessary features from the crate, without embedding my app within a fork of the iced repo? For example, if I use `iced = { version = "0.2.0", features = ["smol"] }` in dependencies, in my `Cargo.toml` file, I get the error `the package `cputest` depends on `iced`, with features: `smol` but `iced` does not have these features.` when building the app.
 
 ## Screen-capture:
-
+![iced_gui.gif](https://github.com/jinjagit/iced/blob/master/my-stuff/cputest/gif/iced_gui.gif)
