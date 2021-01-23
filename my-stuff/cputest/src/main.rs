@@ -24,8 +24,8 @@ struct SystemMonitor {
 #[allow(dead_code)]
 enum State {
     Idle,
-    // last_tick => 'Dead code', but seems needed by Subscription using iced::time.
-    Ticking { last_tick: Instant },
+    // instant => 'Dead code', but seems needed by Subscription using iced::time.
+    Ticking { instant: Instant },
 }
 
 #[derive(Debug, Clone)]
@@ -74,14 +74,14 @@ impl Application for SystemMonitor {
             Message::Toggle => match self.state {
                 State::Idle => {
                     self.state = State::Ticking {
-                        last_tick: Instant::now(),
+                        instant: Instant::now(),
                     };
                 }
                 State::Ticking { .. } => {
                     self.state = State::Idle;
                 }
             },
-            Message::Tick(_now) => match &mut self.state {
+            Message::Tick(_instant) => match &mut self.state {
                 State::Ticking { .. } => {
                     self.sysinfo.refresh_all();
 
